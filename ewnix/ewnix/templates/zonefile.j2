@@ -1,0 +1,16 @@
+$ORIGIN {{ zone.name }}.
+$TTL 86400
+@   IN  SOA dns1.{{ zone.name }}. hostmaster.{{ zone.name }}. (
+            {{ zone.serial }} ; serial
+            {{ zone.ttls.refresh }}        ; refresh
+            {{ zone.ttls.retry }}         ; retry
+            {{ zone.ttls.expire }}       ; expire
+            {{ zone.ttls.minimum }} )      ; minimum
+
+{% for ns in zone.ns_records -%}
+IN  NS  {{ ns }}.
+{% endfor %}
+
+{% for record in zone.records -%}
+{{ record.name }}    IN  {{ record.rtype }}    {{ record.value }}
+{% endfor %}

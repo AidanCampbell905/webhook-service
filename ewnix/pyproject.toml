@@ -21,9 +21,11 @@ dependencies = [
     "paho-mqtt",
     "uuid-utils",
     "requests",
+    "jinja2"
 ]
 [project.scripts]
 rwc = "ewnix.rwc:command"
+zonegen = "ewnix.zonegen:command"
 
 [build-system]
 requires = ["hatchling"]
