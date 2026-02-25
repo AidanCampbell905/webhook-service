@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Webhook Events</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+            background: #fafafa;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        select {
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+
+        th, td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+            vertical-align: top;
+        }
+
+        th {
+            background: #f0f0f0;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+
+        details {
+            cursor: pointer;
+        }
+
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: Consolas, monospace;
+            background: #f7f7f7;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        /* JSON syntax highlighting */
+        .json-key { color: #1a75ff; }
+        .json-string { color: #008000; }
+        .json-number { color: #aa00aa; }
+        .json-boolean { color: #d35400; }
+        .json-null { color: #7f8c8d; }
+    </style>
+</head>
+<body>
+
+<h1>Stored Webhook Events</h1>
+
+<div class="controls">
+    <label for="filter">Filter by event type:</label>
+    <select id="filter">
+        <option value="all">All</option>
+        {% for event in events %}
+            <option value="{{ event['event_type'] }}">{{ event['event_type'] }}</option>
+        {% endfor %}
+    </select>
+</div>
+
+<table id="eventsTable">
+    <tr>
+        <th>ID</th>
+        <th>Event Type</th>
+        <th>Received At</th>
+        <th>Payload</th>
+    </tr>
+
+    {% for event in events %}
+    <tr data-type="{{ event['event_type'] }}">
+        <td>{{ event['id'] }}</td>
+        <td>{{ event['event_type'] }}</td>
+        <td>{{ event['received_at'] }}</td>
+        <td>
+            <details>
+                <summary>View JSON</summary>
+                <pre class="json">{{ event['payload'] }}</pre>
+            </details>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+<script>
+    // Filtering logic
+    const filter = document.getElementById("filter");
+    const rows = document.querySelectorAll("#eventsTable tr[data-type]");
+
+    filter.addEventListener("change", () => {
+        const value = filter.value;
+        rows.forEach(row => {
+            row.style.display = (value === "all" || row.dataset.type === value)
+                ? ""
+                : "none";
+        });
+    });
+
+    // JSON syntax highlighting
+    document.querySelectorAll("pre.json").forEach(pre => {
+        const raw = pre.textContent;
+        try {
+            const obj = JSON.parse(raw);
+            pre.innerHTML = syntaxHighlight(JSON.stringify(obj, null, 2));
+        } catch {
+            // leave raw if parsing fails
+        }
+    });
+
+    function syntaxHighlight(json) {
+        return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?)/g, match => {
+            let cls = "json-number";
+            if (/^"/.test(match)) {
+                cls = /:$/.test(match) ? "json-key" : "json-string";
+            } else if (/true|false/.test(match)) {
+                cls = "json-boolean";
+            } else if (/null/.test(match)) {
+                cls = "json-null";
+            }
+            return `<span class="${cls}">${match}</span>`;
+        });
+    }
+</script>
+
+</body>
+</html>
