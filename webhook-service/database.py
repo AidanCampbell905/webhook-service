@@ -7,6 +7,8 @@ def get_db():
 
 def init_db():
     conn = get_db()
+
+    # Create base table
     conn.execute("""
         CREATE TABLE IF NOT EXISTS events (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -15,4 +17,21 @@ def init_db():
             received_at TEXT
         )
     """)
+
+    # Add new columns if missing
+    try:
+        conn.execute("ALTER TABLE events ADD COLUMN project_id INTEGER")
+    except:
+        pass
+
+    try:
+        conn.execute("ALTER TABLE events ADD COLUMN project_name TEXT")
+    except:
+        pass
+
+    try:
+        conn.execute("ALTER TABLE events ADD COLUMN project_namespace TEXT")
+    except:
+        pass
+
     conn.commit()

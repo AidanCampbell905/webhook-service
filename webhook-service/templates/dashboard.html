@@ -64,7 +64,6 @@
             border-radius: 4px;
         }
 
-        /* JSON syntax highlighting */
         .json-key { color: #1a75ff; }
         .json-string { color: #008000; }
         .json-number { color: #aa00aa; }
@@ -77,11 +76,21 @@
 <h1>Stored Webhook Events</h1>
 
 <div class="controls">
-    <label for="filter">Filter by event type:</label>
+    <!-- Project filter -->
+    <label for="project">Project:</label>
+    <select id="project" name="project" onchange="location.href='?project=' + this.value">
+        <option value="All">All Projects</option>
+        {% for p in projects %}
+            <option value="{{ p }}" {% if p == selected_project %}selected{% endif %}>{{ p }}</option>
+        {% endfor %}
+    </select>
+
+    <!-- Event type filter -->
+    <label for="filter">Event type:</label>
     <select id="filter">
         <option value="all">All</option>
-        {% for event in events %}
-            <option value="{{ event['event_type'] }}">{{ event['event_type'] }}</option>
+        {% for type in events | map(attribute='event_type') | unique %}
+            <option value="{{ type }}">{{ type }}</option>
         {% endfor %}
     </select>
 </div>
@@ -90,6 +99,8 @@
     <tr>
         <th>ID</th>
         <th>Event Type</th>
+        <th>Project</th>
+        <th>Namespace</th>
         <th>Received At</th>
         <th>Payload</th>
     </tr>
@@ -98,6 +109,8 @@
     <tr data-type="{{ event['event_type'] }}">
         <td>{{ event['id'] }}</td>
         <td>{{ event['event_type'] }}</td>
+        <td>{{ event['project_name'] }}</td>
+        <td>{{ event['project_namespace'] }}</td>
         <td>{{ event['received_at'] }}</td>
         <td>
             <details>
@@ -110,7 +123,6 @@
 </table>
 
 <script>
-    // Filtering logic
     const filter = document.getElementById("filter");
     const rows = document.querySelectorAll("#eventsTable tr[data-type]");
 
@@ -123,15 +135,12 @@
         });
     });
 
-    // JSON syntax highlighting
     document.querySelectorAll("pre.json").forEach(pre => {
         const raw = pre.textContent;
         try {
             const obj = JSON.parse(raw);
             pre.innerHTML = syntaxHighlight(JSON.stringify(obj, null, 2));
-        } catch {
-            // leave raw if parsing fails
-        }
+        } catch {}
     });
 
     function syntaxHighlight(json) {
