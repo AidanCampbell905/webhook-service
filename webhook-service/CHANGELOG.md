@@ -28,6 +28,6 @@
 
   ### 02/26/2026
 
-  ##
+  ## 2.5 hours
 
-  - 
+  - Set up ngrok and succesfully tested my webhooks service. I had to set up ngrok to avoid the security restrictions in the lab enviornment/GitLab enviornment. I Created new tables so that I am able to use and view the service on multiple GitLab projects with ease.
