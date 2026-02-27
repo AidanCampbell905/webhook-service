@@ -1,7 +1,11 @@
+import os
 import sqlite3
 
+DB_PATH = "/var/data/events.db"
+os.makedirs("/var/data", exist_ok=True)
+
 def get_db():
-    conn = sqlite3.connect("data/events.db")
+    conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
