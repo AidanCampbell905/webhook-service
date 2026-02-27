@@ -76,16 +76,18 @@
 <h1>Stored Webhook Events</h1>
 
 <div class="controls">
+
     <!-- Project filter -->
     <label for="project">Project:</label>
-    <select id="project" name="project" onchange="location.href='?project=' + this.value">
+    <select id="project" name="project"
+            onchange="location.href='?project=' + this.value + '&order={{ order }}'">
         <option value="All">All Projects</option>
         {% for p in projects %}
             <option value="{{ p }}" {% if p == selected_project %}selected{% endif %}>{{ p }}</option>
         {% endfor %}
     </select>
 
-    <!-- Event type filter -->
+    <!-- Event type filter (client-side only) -->
     <label for="filter">Event type:</label>
     <select id="filter">
         <option value="all">All</option>
@@ -93,6 +95,15 @@
             <option value="{{ type }}">{{ type }}</option>
         {% endfor %}
     </select>
+
+    <!-- Order toggle -->
+    <label for="order">Order:</label>
+    <select id="order"
+            onchange="location.href='?order=' + this.value + '{% if selected_project %}&project={{ selected_project }}{% endif %}'">
+        <option value="desc" {% if order == 'desc' %}selected{% endif %}>Newest first</option>
+        <option value="asc" {% if order == 'asc' %}selected{% endif %}>Oldest first</option>
+    </select>
+
 </div>
 
 <table id="eventsTable">
@@ -121,6 +132,49 @@
     </tr>
     {% endfor %}
 </table>
+
+<!-- PAGINATION CONTROLS -->
+<div style="margin-top: 20px; text-align: center;">
+
+    {% if has_prev %}
+        <a href="?page={{ page - 1 }}&order={{ order }}{% if selected_project %}&project={{ selected_project }}{% endif %}">
+            &laquo; Previous
+        </a>
+    {% endif %}
+
+    <!-- Page number buttons -->
+    {% for p in range(1, total_pages + 1) %}
+        {% if p == page %}
+            <strong>[{{ p }}]</strong>
+        {% else %}
+            <a href="?page={{ p }}&order={{ order }}{% if selected_project %}&project={{ selected_project }}{% endif %}">
+                {{ p }}
+            </a>
+        {% endif %}
+    {% endfor %}
+
+    {% if has_next %}
+        <a href="?page={{ page + 1 }}&order={{ order }}{% if selected_project %}&project={{ selected_project }}{% endif %}">
+            Next &raquo;
+        </a>
+    {% endif %}
+
+</div>
+
+<!-- Jump to page -->
+<div style="margin-top: 10px; text-align: center;">
+    <form method="get" style="display: inline;">
+        <input type="number" name="page" min="1" max="{{ total_pages }}" value="{{ page }}" style="width: 60px;">
+
+        {% if selected_project %}
+            <input type="hidden" name="project" value="{{ selected_project }}">
+        {% endif %}
+
+        <input type="hidden" name="order" value="{{ order }}">
+
+        <button type="submit">Go</button>
+    </form>
+</div>
 
 <script>
     const filter = document.getElementById("filter");

@@ -6,6 +6,8 @@ from config import WEBHOOK_TOKEN, MAX_AGE_SECONDS
 import time
 import json
 
+print("WEBHOOK_TOKEN =", WEBHOOK_TOKEN)
+
 app = Flask(__name__)
 
 @app.route("/health")
@@ -95,31 +97,59 @@ def webhook():
 def dashboard():
     conn = get_db()
 
-    # Build list of project names for dropdown
+    # Pagination settings
+    page = int(request.args.get("page", 1))
+    per_page = 20
+    offset = (page - 1) * per_page
+
+    # Order toggle (new)
+    order = request.args.get("order", "desc")
+    if order not in ("asc", "desc"):
+        order = "desc"
+
+    # Build list of distinct project names
     projects = conn.execute(
         "SELECT DISTINCT project_name FROM events WHERE project_name IS NOT NULL ORDER BY project_name"
     ).fetchall()
     projects = [p["project_name"] for p in projects]
 
-    # Read selected project from query params
     selected_project = request.args.get("project")
 
-    # Filter events by project if selected
+    # Count total events
     if selected_project and selected_project != "All":
-        events = conn.execute(
-            "SELECT * FROM events WHERE project_name = ? ORDER BY id DESC",
+        total = conn.execute(
+            "SELECT COUNT(*) FROM events WHERE project_name = ?",
             (selected_project,)
+        ).fetchone()[0]
+
+        events = conn.execute(
+            f"SELECT * FROM events WHERE project_name = ? ORDER BY id {order} LIMIT ? OFFSET ?",
+            (selected_project, per_page, offset)
         ).fetchall()
     else:
+        total = conn.execute("SELECT COUNT(*) FROM events").fetchone()[0]
+
         events = conn.execute(
-            "SELECT * FROM events ORDER BY id DESC"
+            f"SELECT * FROM events ORDER BY id {order} LIMIT ? OFFSET ?",
+            (per_page, offset)
         ).fetchall()
+
+    # New: total pages
+    total_pages = (total + per_page - 1) // per_page
+
+    has_next = (page * per_page) < total
+    has_prev = page > 1
 
     return render_template(
         "dashboard.html",
         events=events,
         projects=projects,
-        selected_project=selected_project
+        selected_project=selected_project,
+        page=page,
+        has_next=has_next,
+        has_prev=has_prev,
+        total_pages=total_pages,
+        order=order
     )
 
 # Initialize DB if missing
