@@ -8,7 +8,7 @@ def get_db():
 def init_db():
     conn = get_db()
 
-    # Create base table
+    # Base table
     conn.execute("""
         CREATE TABLE IF NOT EXISTS events (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -18,7 +18,7 @@ def init_db():
         )
     """)
 
-    # Add new columns if missing
+    # Add new columns if missing (safe, idempotent)
     try:
         conn.execute("ALTER TABLE events ADD COLUMN project_id INTEGER")
     except:
@@ -34,4 +34,14 @@ def init_db():
     except:
         pass
 
+    # New: event_id for replay protection
+    try:
+        conn.execute("ALTER TABLE events ADD COLUMN event_id TEXT")
+    except:
+        pass
+
     conn.commit()
+
+def has_seen_event(conn, event_id):
+    cur = conn.execute("SELECT 1 FROM events WHERE event_id = ?", (event_id,))
+    return cur.fetchone() is not None
