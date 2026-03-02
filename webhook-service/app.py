@@ -1,12 +1,9 @@
 from flask import Flask, request, render_template
 from database import get_db, init_db, has_seen_event
 from datetime import datetime
-from pathlib import Path
 from config import WEBHOOK_TOKEN, MAX_AGE_SECONDS
 import time
 import json
-
-print("WEBHOOK_TOKEN =", WEBHOOK_TOKEN)
 
 app = Flask(__name__)
 
@@ -23,8 +20,8 @@ def validate_payload(data):
 
 @app.route("/webhook", methods=["POST"])
 def webhook():
-    # 1. Token verification
-    token = request.headers.get("X-Webhook-Token")
+    # 1. Token verification (GitLab header)
+    token = request.headers.get("X-Gitlab-Token")
     if token != WEBHOOK_TOKEN:
         app.logger.warning(f"Invalid token from {request.remote_addr}")
         return {"error": "Forbidden"}, 403
@@ -38,14 +35,14 @@ def webhook():
     if error:
         return {"error": error}, 400
 
-    # 3. Timestamp freshness 
+    # 3. Timestamp freshness
     timestamp = data.get("timestamp")
     if timestamp:
         now = time.time()
         if abs(now - timestamp) > MAX_AGE_SECONDS:
             return {"error": "Stale event"}, 400
 
-    # 4. Replay protection (optional)
+    # 4. Replay protection
     event_id = data.get("event_id")
     conn = get_db()
     if event_id and has_seen_event(conn, event_id):
@@ -97,17 +94,17 @@ def webhook():
 def dashboard():
     conn = get_db()
 
-    # Pagination settings
+    # Pagination
     page = int(request.args.get("page", 1))
     per_page = 20
     offset = (page - 1) * per_page
 
-    # Order toggle (new)
+    # Order toggle
     order = request.args.get("order", "desc")
     if order not in ("asc", "desc"):
         order = "desc"
 
-    # Build list of distinct project names
+    # Project list
     projects = conn.execute(
         "SELECT DISTINCT project_name FROM events WHERE project_name IS NOT NULL ORDER BY project_name"
     ).fetchall()
@@ -115,7 +112,7 @@ def dashboard():
 
     selected_project = request.args.get("project")
 
-    # Count total events
+    # Count + fetch events
     if selected_project and selected_project != "All":
         total = conn.execute(
             "SELECT COUNT(*) FROM events WHERE project_name = ?",
@@ -134,9 +131,7 @@ def dashboard():
             (per_page, offset)
         ).fetchall()
 
-    # New: total pages
     total_pages = (total + per_page - 1) // per_page
-
     has_next = (page * per_page) < total
     has_prev = page > 1
 
@@ -152,9 +147,8 @@ def dashboard():
         order=order
     )
 
-# Initialize DB if missing
-if not Path("data/events.db").exists():
-    init_db()
+# Always initialize DB on startup
+init_db()
 
 if __name__ == "__main__":
     import os

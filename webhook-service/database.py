@@ -19,31 +19,13 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             event_type TEXT,
             payload TEXT,
-            received_at TEXT
+            received_at TEXT,
+            project_id INTEGER,
+            project_name TEXT,
+            project_namespace TEXT,
+            event_id TEXT
         )
     """)
-
-    # Add new columns if missing (safe, idempotent)
-    try:
-        conn.execute("ALTER TABLE events ADD COLUMN project_id INTEGER")
-    except:
-        pass
-
-    try:
-        conn.execute("ALTER TABLE events ADD COLUMN project_name TEXT")
-    except:
-        pass
-
-    try:
-        conn.execute("ALTER TABLE events ADD COLUMN project_namespace TEXT")
-    except:
-        pass
-
-    # New: event_id for replay protection
-    try:
-        conn.execute("ALTER TABLE events ADD COLUMN event_id TEXT")
-    except:
-        pass
 
     conn.commit()
 
