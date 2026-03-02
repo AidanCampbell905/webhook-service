@@ -1,8 +1,9 @@
 import os
 import sqlite3
 
-DB_PATH = "/var/data/events.db"
-os.makedirs("/var/data", exist_ok=True)
+# Store the DB inside the project directory (Render-safe)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, "events.db")
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
